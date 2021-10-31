@@ -9,10 +9,11 @@ from ipaddress import ip_address
 
 from celery.result import AsyncResult
 
-from src.tasks import get_ip_data_task
+from src.tasks import get_ip_data_task, save_ip_address_data
 from src.db import mysql_db
 from src.models import (
     Task, 
+    IpAddressData,
     IpAddressDataAsn, 
     IpAddressDataLanguages, 
     IpAddressDataCurrency, 
@@ -20,6 +21,8 @@ from src.models import (
     IpAddressDataThreat
 )
 from src.celery_ import celery_app
+
+from ipdata import ipdata
 
 
 class IpAddressSchema(BaseModel):
@@ -47,10 +50,15 @@ async def add_process_time_header(request: Request, call_next) -> Any:
 @app.post("/task")
 async def create_task_for_getting_ip_data(data: IpAddressSchema) -> JSONResponse:
     ip = data.ip
-    celery_task_id = get_ip_data_task.delay(ip).id
-    task_model = Task.create(celery_task_id=str(celery_task_id))
+    # celery_task_id = get_ip_data_task.delay(ip).id
+    ipdata_ = ipdata.IPData("d59525ba98387b087900982d2f8beb33f6d640eeac7437b12e3c0b68")
+    response = ipdata_.lookup(ip)
+    ipdata_model = save_ip_address_data(dict(response))
+    print(ipdata_model.ip)
 
-    return JSONResponse({"task_id": task_model.id}, status_code=200)
+    task_model = Task.create(celery_task_id="asfsadgsdgsDH", ip_address_data=ipdata_model)
+
+    return JSONResponse({"task_id": response}, status_code=200)
 
 
 @app.get("/status/{task_id}")
@@ -64,14 +72,18 @@ async def result_task(task_id: int) -> JSONResponse:
 @app.on_event("startup")
 async def startup() -> None:
     mysql_db.connect(reuse_if_open=True)
-    mysql_db.create_tables((
-        Task, 
+
+    IpDataLanguages = IpAddressData.languages.get_through_model()
+    mysql_db.create_tables([
+        Task,
+        IpAddressData,
         IpAddressDataAsn, 
+        IpDataLanguages,
         IpAddressDataLanguages, 
         IpAddressDataCurrency, 
         IpAddressDataTimeZone, 
         IpAddressDataThreat,
-    ))
+    ])
 
 
 @app.on_event("shutdown")

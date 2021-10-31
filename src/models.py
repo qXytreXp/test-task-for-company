@@ -19,6 +19,7 @@ class BaseModel(Model):
 
 
 class IpAddressDataThreat(BaseModel):
+    threat_id = PrimaryKeyField()
     is_tor = BooleanField()
     is_proxy = BooleanField()
     is_anonymous = BooleanField()
@@ -29,6 +30,7 @@ class IpAddressDataThreat(BaseModel):
 
 
 class IpAddressDataTimeZone(BaseModel):
+    time_zone_id = PrimaryKeyField()
     name = CharField()
     abbr = CharField()
     offset = IntegerField()
@@ -37,6 +39,7 @@ class IpAddressDataTimeZone(BaseModel):
 
 
 class IpAddressDataCurrency(BaseModel):
+    currency_id = PrimaryKeyField()
     name = CharField()
     code = CharField(max_length=3)
     symbol = CharField(max_length=1)
@@ -45,11 +48,13 @@ class IpAddressDataCurrency(BaseModel):
 
 
 class IpAddressDataLanguages(BaseModel):
+    languages_id = PrimaryKeyField()
     name = CharField()
     native = CharField()
 
 
 class IpAddressDataAsn(BaseModel):
+    asn_id = PrimaryKeyField()
     asn = CharField(max_length=55)
     name = CharField(max_length=75)
     domain = CharField()
@@ -58,6 +63,7 @@ class IpAddressDataAsn(BaseModel):
 
 
 class IpAddressData(BaseModel):
+    ipaddressdata_id = PrimaryKeyField(null=True)
     ip = IPField(unique=True)
     is_eu = BooleanField()
 
@@ -80,25 +86,17 @@ class IpAddressData(BaseModel):
     emoji_flag = CharField(max_length=5)
     emoji_unicode = CharField()
 
-    asn = ForeignKeyField(IpAddressDataAsn, related_name="ipaddressdata", on_delete="CASCADE")
+    asn = ForeignKeyField(IpAddressDataAsn, related_name="ipaddressdata", on_delete="CASCADE", to_field="asn_id")
     languages = ManyToManyField(IpAddressDataLanguages, on_delete="CASCADE")
-    currency = ForeignKeyField(IpAddressDataCurrency, related_name="ipaddressdata", on_delete="CASCADE")
-    time_zone = ForeignKeyField(IpAddressDataTimeZone, related_name="ipaddressdata", on_delete="CASCADE")
-    threat = ForeignKeyField(IpAddressDataThreat, related_name="ipaddressdata", on_delete="CASCADE")
+    currency = ForeignKeyField(IpAddressDataCurrency, related_name="ipaddressdata", on_delete="CASCADE", to_field="currency_id")
+    time_zone = ForeignKeyField(IpAddressDataTimeZone, related_name="ipaddressdata", on_delete="CASCADE", to_field="time_zone_id")
+    threat = ForeignKeyField(IpAddressDataThreat, related_name="ipaddressdata", on_delete="CASCADE", to_field="threat_id")
 
 
 class Task(BaseModel):
-    id = PrimaryKeyField(null=True)
+    id = PrimaryKeyField()
     celery_task_id = CharField(max_length=36)  # Max celery task id length 36 characters.
-    ip_address_data = ForeignKeyField(IpAddressData, related_name="task")
+    ipaddressdata = ForeignKeyField(IpAddressData, to_field="ipaddressdata_id")
 
-
-# Task.create_table("task")
-
-# IpAddressDataAsn.create_table("ipaddressdataasn")
-# IpAddressDataLanguages.create_table("ipaddressdatalanguages")
-# IpAddressDataCurrency.create_table("ipaddressdatacurrency")
-# IpAddressDataTimeZone.create_table("ipaddressdatatimezone")
-# IpAddressDataThreat.create_table("ipaddressdatathreat")
-
-# IpAddressData.create_table("ipaddressdata")
+    class Meta:
+        db_table = "tasks"
