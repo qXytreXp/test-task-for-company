@@ -13,6 +13,8 @@ celery = "*"
 ipdata = "*"
 redis = "*"
 pymysql = "*"
+cryptography = "*"
+passlib = {extras = ["bcrypt"], version = "*"}
 
 [dev-packages]
 
