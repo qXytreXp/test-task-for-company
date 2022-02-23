@@ -1,0 +1,42 @@
+version: '3.1'
+
+services:
+  db:
+    image: mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: 'root123passwd'
+      MYSQL_DATABASE: 'testtask1'
+      MYSQL_ROOT_HOST: '%'
+    ports:
+      - 3306:3306
+
+  cache:
+    image: redis
+    restart: always
+    ports:
+      - 6379:6379
+
+  app:
+    build: .
+    container_name: testtask
+    environment:
+      DATABASE_HOST: db
+      CELERY_BROKER: "redis://cache:6379"
+      CELERY_BACKEND: "redis://cache:6379"
+    ports: 
+      - '127.0.0.1:8000:8000'
+    depends_on:
+      - db
+      - cache
+
+  celery:
+    build: .
+    environment:
+      DATABASE_HOST: db
+      CELERY_BROKER: "redis://cache:6379"
+      CELERY_BACKEND: "redis://cache:6379"
+    command: ['celery', '-A', 'src.celery_', 'worker', '--loglevel', 'debug']
+    depends_on:
+      - app
+

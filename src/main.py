@@ -54,3 +54,4 @@ async def startup() -> None:
 @app.on_event("shutdown")
 async def shutdown() -> None:
     mysql_db.close()
+
