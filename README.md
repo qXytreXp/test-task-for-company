@@ -4,7 +4,7 @@ Test Task For Company
 Python v3.9.5
 Need to run docker and docker-compose.
 
-First Terminal run:
+Terminal run:
 ```
 $ git clone 
 $ cd <project-dir>
